@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>test</title>
+    <!-- <script type="text/javascript" src="/js/jquery.js?v=1.1"></script>
+    <script type="text/javascript" src="/js/vue.min.js?v=1.1"></script>
+    <link rel="stylesheet" href="/js/vant2.12.51/index.css?v=1.1"> -->
+    <link rel="stylesheet" href="/js/vue+element/element.css">
+    <style>
+        #app {
+            padding: 30px;
+        }
+
+        a {
+            color: gray;
+            text-decoration: none;
+        }
+    </style>
+    <script type="text/javascript">
+        var base_url = 'http://127.0.0.1:8000/api'
+    </script>
+</head>
+
+<body>
+    <div id="app">
+                
+    </div>
+</body>
+<script src="/js/vue+element/vue.js"></script>
+<script src="/js/vue+element/element.js"></script>
+<script src="/js/vue+element/jquery.min.js"></script>
+<script type="text/javascript" src="/js/common.js?v=1.1"></script>
+<script>
+    var app = new Vue({
+        el: '#app',
+        data: function () {
+            return {
+                menus: []
+            }
+        },
+        mounted: function () {
+            console.log('mounted')
+            // // 获取url中的token
+            token = getQueryString('token')
+            // // 根据ID 获取公众号在系统中的信息
+            // var id = getQueryString('id')
+            if (token) {
+                setCookie('auth', token, 'd30')
+            }
+
+            if(getCookie('auth')){
+                this.init()
+            }else{
+                this.login()
+            }
+        },
+        methods: {
+            ajax: function (type, url, params, callback) {
+                var _this = this
+                this.loading = true
+                var xmlhttp;
+                if (window.XMLHttpRequest) {// code for IE7+, Firefox, Chrome, Opera, Safari
+                    xmlhttp = new XMLHttpRequest();
+                } else {// code for IE6, IE5
+                    xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+                }
+                xmlhttp.onreadystatechange = function () {
+                    if (xmlhttp.readyState === 4) {
+                        if (xmlhttp.status === 200) {
+                            callback(JSON.parse(xmlhttp.responseText));
+
+                        } else {
+                            console.log("请求错误，" + xmlhttp.status);
+                            res = JSON.parse(xmlhttp.responseText)
+                            app.$message.error(res.msg);
+                        }
+                    }
+                    _this.loading = false
+                }
+                url = base_url + url;
+                xmlhttp.open(type, url, true);
+                xmlhttp.setRequestHeader("Content-Type", "application/json");
+                var token = ''
+                if (getCookie('auth')) {
+                    token = getCookie('auth')
+                }
+                xmlhttp.setRequestHeader("Authorization", token);
+                xmlhttp.send(JSON.stringify(params));
+            },
+            init(){
+                this.getMenus();
+                this.getPersonnel();
+                this.getChannel();
+            },
+            login(){
+                let params = {
+                    "username": "admin",
+                    "password": "123456"
+                }
+                this.ajax(
+                    'POST',
+                    '/login',
+                    params,
+                    function (res) {
+                        console.log(res)
+                        setCookie('auth', res.data.token, 'd30')
+                        app.init()
+                    }
+                )
+            },
+            getMenus: function () {
+                this.ajax(
+                    'GET',
+                    '/role/allMenus',
+                    {},
+                    function (res) {
+                        console.log(res)
+                        app.$set(app.$data, 'menus', res.data);
+                    }
+                )
+            }
+        }
+    })
+</script>
+</html>
